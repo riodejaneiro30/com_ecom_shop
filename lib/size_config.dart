@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class SizeConfig {
@@ -17,9 +18,13 @@ class SizeConfig {
 
 // Get the proportionate height as per screen size
 double getProportionateScreenHeight(double inputHeight) {
-  double screenHeight = SizeConfig.screenHeight;
-  // 812 is the layout height that designer use
-  return (inputHeight / 812.0) * screenHeight;
+  if(kIsWeb){
+    return 20;
+  }else{
+    double screenHeight = SizeConfig.screenHeight;
+    // 812 is the layout height that designer use
+    return (inputHeight / 812.0) * screenHeight;
+  }
 }
 
 // Get the proportionate height as per screen size

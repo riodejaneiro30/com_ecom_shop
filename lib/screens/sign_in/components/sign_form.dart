@@ -1,60 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shop_app/components/custom_surfix_icon.dart';
 import 'package:shop_app/components/form_error.dart';
 import 'package:shop_app/helper/keyboard.dart';
 import 'package:shop_app/screens/forgot_password/forgot_password_screen.dart';
-import 'package:shop_app/screens/login_success/login_success_screen.dart';
+import 'package:shop_app/screens/sign_in/components/sign_form_state.dart';
+import 'package:shop_app/screens/sign_in/components/sign_form_view_model.dart';
+import 'package:shop_app/screens/sign_in/sign_in_view_model.dart';
 
 import '../../../components/default_button.dart';
 import '../../../constants.dart';
 import '../../../size_config.dart';
 
-class SignForm extends StatefulWidget {
-  @override
-  _SignFormState createState() => _SignFormState();
-}
-
-class _SignFormState extends State<SignForm> {
+class SignForm extends ConsumerWidget {
   final _formKey = GlobalKey<FormState>();
-  String? email;
-  String? password;
-  bool? remember = false;
-  final List<String?> errors = [];
-
-  void addError({String? error}) {
-    if (!errors.contains(error))
-      setState(() {
-        errors.add(error);
-      });
-  }
-
-  void removeError({String? error}) {
-    if (errors.contains(error))
-      setState(() {
-        errors.remove(error);
-      });
-  }
+  final _emailTextController = TextEditingController();
+  final _passwordTextController = TextEditingController();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ScopedReader watch) {
+    SignFormState state = watch(signFormViewModelProvider);
+
     return Form(
       key: _formKey,
       child: Column(
         children: [
-          buildEmailFormField(),
+          buildEmailFormField(context),
           SizedBox(height: getProportionateScreenHeight(30)),
-          buildPasswordFormField(),
+          buildPasswordFormField(context),
           SizedBox(height: getProportionateScreenHeight(30)),
           Row(
             children: [
               Checkbox(
-                value: remember,
+                value: state.isRemember,
                 activeColor: kPrimaryColor,
-                onChanged: (value) {
-                  setState(() {
-                    remember = value;
-                  });
-                },
+                onChanged: (value) {},
               ),
               Text("Remember me"),
               Spacer(),
@@ -68,7 +48,7 @@ class _SignFormState extends State<SignForm> {
               )
             ],
           ),
-          FormError(errors: errors),
+          FormError(errors: state.errors),
           SizedBox(height: getProportionateScreenHeight(20)),
           DefaultButton(
             text: "Continue",
@@ -77,7 +57,8 @@ class _SignFormState extends State<SignForm> {
                 _formKey.currentState!.save();
                 // if all are valid then go to success screen
                 KeyboardUtil.hideKeyboard(context);
-                Navigator.pushNamed(context, LoginSuccessScreen.routeName);
+                context.read(signInViewModelProvider.notifier).login(_emailTextController.text, _passwordTextController.text);
+//                Navigator.pushNamed(context, HomeScreen.routeName);
               }
             },
           ),
@@ -86,24 +67,25 @@ class _SignFormState extends State<SignForm> {
     );
   }
 
-  TextFormField buildPasswordFormField() {
+  TextFormField buildPasswordFormField(BuildContext context) {
     return TextFormField(
+      key: Key("sign_form_text_input_password"),
       obscureText: true,
-      onSaved: (newValue) => password = newValue,
+      controller: _passwordTextController,
       onChanged: (value) {
         if (value.isNotEmpty) {
-          removeError(error: kPassNullError);
-        } else if (value.length >= 8) {
-          removeError(error: kShortPassError);
+          context.read(signFormViewModelProvider.notifier).removeError(kPassNullError);
+        } else if (value.length >= 4) {
+          context.read(signFormViewModelProvider.notifier).removeError(kShortPassError);
         }
         return null;
       },
       validator: (value) {
         if (value!.isEmpty) {
-          addError(error: kPassNullError);
+          context.read(signFormViewModelProvider.notifier).addError(kPassNullError);
           return "";
-        } else if (value.length < 8) {
-          addError(error: kShortPassError);
+        } else if (value.length < 4) {
+          context.read(signFormViewModelProvider.notifier).addError(kShortPassError);
           return "";
         }
         return null;
@@ -119,24 +101,25 @@ class _SignFormState extends State<SignForm> {
     );
   }
 
-  TextFormField buildEmailFormField() {
+  TextFormField buildEmailFormField(BuildContext context) {
     return TextFormField(
+      key: Key("sign_form_text_input_email"),
       keyboardType: TextInputType.emailAddress,
-      onSaved: (newValue) => email = newValue,
+      controller: _emailTextController,
       onChanged: (value) {
         if (value.isNotEmpty) {
-          removeError(error: kEmailNullError);
+          context.read(signFormViewModelProvider.notifier).removeError(kEmailNullError);
         } else if (emailValidatorRegExp.hasMatch(value)) {
-          removeError(error: kInvalidEmailError);
+          context.read(signFormViewModelProvider.notifier).removeError(kInvalidEmailError);
         }
         return null;
       },
       validator: (value) {
         if (value!.isEmpty) {
-          addError(error: kEmailNullError);
+          context.read(signFormViewModelProvider.notifier).addError(kEmailNullError);
           return "";
         } else if (!emailValidatorRegExp.hasMatch(value)) {
-          addError(error: kInvalidEmailError);
+          context.read(signFormViewModelProvider.notifier).addError(kInvalidEmailError);
           return "";
         }
         return null;

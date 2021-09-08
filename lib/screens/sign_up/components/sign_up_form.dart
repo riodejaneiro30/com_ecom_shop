@@ -1,52 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shop_app/components/custom_surfix_icon.dart';
 import 'package:shop_app/components/default_button.dart';
 import 'package:shop_app/components/form_error.dart';
-import 'package:shop_app/screens/complete_profile/complete_profile_screen.dart';
+import 'package:shop_app/screens/sign_up/components/sign_up_form_view_model.dart';
+import 'package:shop_app/screens/sign_up/sign_up_view_model.dart';
 
 import '../../../constants.dart';
 import '../../../size_config.dart';
 
-
-class SignUpForm extends StatefulWidget {
-  @override
-  _SignUpFormState createState() => _SignUpFormState();
-}
-
-class _SignUpFormState extends State<SignUpForm> {
+class SignUpForm extends ConsumerWidget {
   final _formKey = GlobalKey<FormState>();
-  String? email;
-  String? password;
-  String? conform_password;
-  bool remember = false;
-  final List<String?> errors = [];
-
-  void addError({String? error}) {
-    if (!errors.contains(error))
-      setState(() {
-        errors.add(error);
-      });
-  }
-
-  void removeError({String? error}) {
-    if (errors.contains(error))
-      setState(() {
-        errors.remove(error);
-      });
-  }
+  final _emailTextEditingController = TextEditingController();
+  final _passwordTextEditingController = TextEditingController();
+  final _passwordConformTextEditingController = TextEditingController();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ScopedReader watch) {
+    var state = watch(signUpFormViewModelProvider);
+
     return Form(
       key: _formKey,
       child: Column(
         children: [
-          buildEmailFormField(),
+          buildEmailFormField(context),
           SizedBox(height: getProportionateScreenHeight(30)),
-          buildPasswordFormField(),
+          buildPasswordFormField(context),
           SizedBox(height: getProportionateScreenHeight(30)),
-          buildConformPassFormField(),
-          FormError(errors: errors),
+          buildConformPassFormField(context),
+          FormError(errors: state.errors),
           SizedBox(height: getProportionateScreenHeight(40)),
           DefaultButton(
             text: "Continue",
@@ -54,7 +36,10 @@ class _SignUpFormState extends State<SignUpForm> {
               if (_formKey.currentState!.validate()) {
                 _formKey.currentState!.save();
                 // if all are valid then go to success screen
-                Navigator.pushNamed(context, CompleteProfileScreen.routeName);
+//                Navigator.pushNamed(context, CompleteProfileScreen.routeName);
+                context.read(signUpViewModelProvider.notifier).signUp(
+                    _emailTextEditingController.text,
+                    _passwordTextEditingController.text);
               }
             },
           ),
@@ -63,24 +48,33 @@ class _SignUpFormState extends State<SignUpForm> {
     );
   }
 
-  TextFormField buildConformPassFormField() {
+  TextFormField buildConformPassFormField(BuildContext context) {
     return TextFormField(
+      controller: _passwordConformTextEditingController,
       obscureText: true,
-      onSaved: (newValue) => conform_password = newValue,
       onChanged: (value) {
         if (value.isNotEmpty) {
-          removeError(error: kPassNullError);
-        } else if (value.isNotEmpty && password == conform_password) {
-          removeError(error: kMatchPassError);
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .removeError(kPassNullError);
+        } else if (value.isNotEmpty &&
+            _passwordTextEditingController.text ==
+                _passwordConformTextEditingController.text) {
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .removeError(kMatchPassError);
         }
-        conform_password = value;
       },
       validator: (value) {
         if (value!.isEmpty) {
-          addError(error: kPassNullError);
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .addError(kPassNullError);
           return "";
-        } else if ((password != value)) {
-          addError(error: kMatchPassError);
+        } else if ((_passwordTextEditingController.text != value)) {
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .addError(kMatchPassError);
           return "";
         }
         return null;
@@ -96,24 +90,31 @@ class _SignUpFormState extends State<SignUpForm> {
     );
   }
 
-  TextFormField buildPasswordFormField() {
+  TextFormField buildPasswordFormField(BuildContext context) {
     return TextFormField(
+      controller: _passwordTextEditingController,
       obscureText: true,
-      onSaved: (newValue) => password = newValue,
       onChanged: (value) {
         if (value.isNotEmpty) {
-          removeError(error: kPassNullError);
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .removeError(kPassNullError);
         } else if (value.length >= 8) {
-          removeError(error: kShortPassError);
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .removeError(kShortPassError);
         }
-        password = value;
       },
       validator: (value) {
         if (value!.isEmpty) {
-          addError(error: kPassNullError);
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .addError(kPassNullError);
           return "";
         } else if (value.length < 8) {
-          addError(error: kShortPassError);
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .addError(kShortPassError);
           return "";
         }
         return null;
@@ -129,24 +130,32 @@ class _SignUpFormState extends State<SignUpForm> {
     );
   }
 
-  TextFormField buildEmailFormField() {
+  TextFormField buildEmailFormField(BuildContext context) {
     return TextFormField(
+      controller: _emailTextEditingController,
       keyboardType: TextInputType.emailAddress,
-      onSaved: (newValue) => email = newValue,
       onChanged: (value) {
         if (value.isNotEmpty) {
-          removeError(error: kEmailNullError);
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .removeError(kEmailNullError);
         } else if (emailValidatorRegExp.hasMatch(value)) {
-          removeError(error: kInvalidEmailError);
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .removeError(kInvalidEmailError);
         }
         return null;
       },
       validator: (value) {
         if (value!.isEmpty) {
-          addError(error: kEmailNullError);
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .addError(kEmailNullError);
           return "";
         } else if (!emailValidatorRegExp.hasMatch(value)) {
-          addError(error: kInvalidEmailError);
+          context
+              .read(signUpFormViewModelProvider.notifier)
+              .addError(kInvalidEmailError);
           return "";
         }
         return null;

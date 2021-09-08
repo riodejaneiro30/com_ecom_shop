@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shop_app/components/custom_surfix_icon.dart';
 import 'package:shop_app/components/default_button.dart';
 import 'package:shop_app/components/form_error.dart';
 import 'package:shop_app/components/no_account_text.dart';
+import 'package:shop_app/screens/forgot_password/components/forgot_pass_form_view_model.dart';
+import 'package:shop_app/screens/forgot_password/forgot_password_view_model.dart';
 import 'package:shop_app/size_config.dart';
 
 import '../../../constants.dart';
@@ -41,47 +44,45 @@ class Body extends StatelessWidget {
   }
 }
 
-class ForgotPassForm extends StatefulWidget {
-  @override
-  _ForgotPassFormState createState() => _ForgotPassFormState();
-}
-
-class _ForgotPassFormState extends State<ForgotPassForm> {
+class ForgotPassForm extends ConsumerWidget {
   final _formKey = GlobalKey<FormState>();
-  List<String> errors = [];
-  String? email;
+  final _emailTextController = TextEditingController();
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ScopedReader watch) {
+    var state = watch(forgotPassFormViewModelProvider);
+
     return Form(
       key: _formKey,
       child: Column(
         children: [
           TextFormField(
             keyboardType: TextInputType.emailAddress,
-            onSaved: (newValue) => email = newValue,
+            controller: _emailTextController,
             onChanged: (value) {
-              if (value.isNotEmpty && errors.contains(kEmailNullError)) {
-                setState(() {
-                  errors.remove(kEmailNullError);
-                });
+              if (value.isNotEmpty && state.errors.contains(kEmailNullError)) {
+                context
+                    .read(forgotPassFormViewModelProvider.notifier)
+                    .removeError(kEmailNullError);
               } else if (emailValidatorRegExp.hasMatch(value) &&
-                  errors.contains(kInvalidEmailError)) {
-                setState(() {
-                  errors.remove(kInvalidEmailError);
-                });
+                  state.errors.contains(kInvalidEmailError)) {
+                context
+                    .read(forgotPassFormViewModelProvider.notifier)
+                    .removeError(kInvalidEmailError);
               }
               return null;
             },
             validator: (value) {
-              if (value!.isEmpty && !errors.contains(kEmailNullError)) {
-                setState(() {
-                  errors.add(kEmailNullError);
-                });
-              } else if (!emailValidatorRegExp.hasMatch(value) &&
-                  !errors.contains(kInvalidEmailError)) {
-                setState(() {
-                  errors.add(kInvalidEmailError);
-                });
+              if (value!.isEmpty && !state.errors.contains(kEmailNullError)) {
+                context
+                    .read(forgotPassFormViewModelProvider.notifier)
+                    .addError(kEmailNullError);
+                return "";
+              } else if (!emailValidatorRegExp.hasMatch(value)) {
+                context
+                    .read(forgotPassFormViewModelProvider.notifier)
+                    .addError(kInvalidEmailError);
+                return "";
               }
               return null;
             },
@@ -95,13 +96,16 @@ class _ForgotPassFormState extends State<ForgotPassForm> {
             ),
           ),
           SizedBox(height: getProportionateScreenHeight(30)),
-          FormError(errors: errors),
+          FormError(errors: state.errors),
           SizedBox(height: SizeConfig.screenHeight * 0.1),
           DefaultButton(
             text: "Continue",
             press: () {
               if (_formKey.currentState!.validate()) {
-                // Do what you want to do
+                print("masuk");
+                context
+                    .read(forgotPasswordViewModelProvider.notifier)
+                    .forgotPassword(_emailTextController.text);
               }
             },
           ),
