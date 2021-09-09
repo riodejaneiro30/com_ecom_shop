@@ -57,6 +57,7 @@ class ForgotPassForm extends ConsumerWidget {
       child: Column(
         children: [
           TextFormField(
+            key: Key("forgot_password_form_text_input_email"),
             keyboardType: TextInputType.emailAddress,
             controller: _emailTextController,
             onChanged: (value) {

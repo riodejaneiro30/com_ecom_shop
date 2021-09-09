@@ -50,6 +50,7 @@ class SignUpForm extends ConsumerWidget {
 
   TextFormField buildConformPassFormField(BuildContext context) {
     return TextFormField(
+      key: Key("sign_up_form_text_input_conform_pass"),
       controller: _passwordConformTextEditingController,
       obscureText: true,
       onChanged: (value) {
@@ -92,6 +93,7 @@ class SignUpForm extends ConsumerWidget {
 
   TextFormField buildPasswordFormField(BuildContext context) {
     return TextFormField(
+      key: Key("sign_up_form_text_input_password"),
       controller: _passwordTextEditingController,
       obscureText: true,
       onChanged: (value) {
@@ -132,6 +134,7 @@ class SignUpForm extends ConsumerWidget {
 
   TextFormField buildEmailFormField(BuildContext context) {
     return TextFormField(
+      key: Key("sign_up_form_text_input_email"),
       controller: _emailTextEditingController,
       keyboardType: TextInputType.emailAddress,
       onChanged: (value) {
